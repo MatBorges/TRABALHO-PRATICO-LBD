@@ -16,7 +16,7 @@ CREATE TABLE usuarios (
 
 
 CREATE TABLE restricoes (
-    id serial primary key,
+    id serial primary key,entar tipo_grupo_aliment
     nome varchar(100) not null unique,
     descricao text
 );
@@ -28,7 +28,7 @@ CREATE TABLE usuario_restricoes (
     primary key (usuario_id, restricao_id)
 );
 
-
+-- TRANSFORMAR EM TABELA
 CREATE TYPE tipo_grupo_alimentar AS enum ('Frutas', 'Verduras', 'Cereais', 'Laticínios', 'Carnes', 'Doces');
 
 CREATE TABLE alimentos (
@@ -81,3 +81,6 @@ CREATE TABLE recomendacao_refeicoes (
     ordem_refeicao smallint, 
     primary key (recomendacao_id, refeicao_id)
 );
+
+-- Adcioonar tabela de avaliações
+
