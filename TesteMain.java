@@ -33,7 +33,6 @@ public class TesteMain {
             e.printStackTrace();
         }
 
-        // 4. Fecha a conexão
         banco.finalizaConexao();
     }
     
