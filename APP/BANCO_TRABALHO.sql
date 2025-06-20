@@ -16,8 +16,8 @@ CREATE TABLE usuarios (
 
 
 CREATE TABLE restricoes (
-    id serial primary key,entar tipo_grupo_aliment
-    nome varchar(100) not null unique,
+    id serial primary key,
+    nome varchar(100) unique not null,
     descricao text
 );
 
@@ -82,5 +82,11 @@ CREATE TABLE recomendacao_refeicoes (
     primary key (recomendacao_id, refeicao_id)
 );
 
--- Adcioonar tabela de avaliações
-
+CREATE TABLE avaliacoes (
+    id serial primary key,
+    recomendacao_id int references recomendacoes(id) on delete cascade,
+    usuario_id int references usuarios(id),
+    nota smallint check (nota BETWEEN 1 AND 5),
+    comentario text,
+    data_avaliacao timestamp default CURRENT_TIMESTAMP
+);
