@@ -12,11 +12,14 @@ public class App {
              Scanner scan = new Scanner(System.in)) {
 
             UsuarioLogica usuLog = new UsuarioLogica(conn);
+            RestricaoLogica resLog = new RestricaoLogica(conn);
 
             while (true) {
                 System.out.println("\nMenu PLANO ALIMENTAR:");
                 System.out.println("1 - Cadastrar Usuario");
                 System.out.println("2 - Consultar Usuarios");
+                System.out.println("3 - Cadastrar Restrição");
+                System.out.println("4 - Consultar Restrições");
                 System.out.println("0 - Sair");
                 System.out.print("Escolha uma opção: ");
                 int opcao = scan.nextInt();
@@ -25,6 +28,8 @@ public class App {
                 switch (opcao) {
                     case 1 -> cadastrarUsuario(scan, usuLog);
                     case 2 -> consultarUsuarios(usuLog);
+                    case 3 -> cadastrarRestricao(scan, resLog);
+                    case 4 -> consultarRestricoes(resLog);
                     case 0 -> {
                         System.out.println("Encerrando programa.");
                         return;
@@ -86,6 +91,26 @@ public class App {
         }
     }
 
+
+    private static void cadastrarRestricao(Scanner scan, RestricaoLogica resLog) {
+        try {
+            System.out.print("Nome: ");
+            String nome = scan.nextLine().toUpperCase();
+
+            System.out.print("Descrição: ");
+            String descricao = scan.nextLine();            
+
+            Restricao r = new Restricao(nome, descricao);
+            resLog.adicionarRestricao(r);
+            System.out.println("Restrição cadastrada com sucesso!");
+
+        } catch (Exception e) {
+            System.out.println("Erro: " + e.getMessage());
+            scan.nextLine();
+        }
+    }
+
+
     private static void consultarUsuarios(UsuarioLogica usuLog) {
         try {
             List<Usuario> lista = usuLog.listarUsuarios();
@@ -93,7 +118,19 @@ public class App {
                 System.out.println(p);
             }
         } catch (SQLException e) {
-            System.out.println("Erro ao consultar: " + e.getMessage());
+            System.out.println("Erro ao consultar usuários: " + e.getMessage());
+        }
+    }
+
+
+    private static void consultarRestricoes(RestricaoLogica resLog) {
+        try {
+            List<Restricao> lista = resLog.listarRestricoes();
+            for (Restricao r : lista) {
+                System.out.println(r);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar restrições: " + e.getMessage());
         }
     }
 }
