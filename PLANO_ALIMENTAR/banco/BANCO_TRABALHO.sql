@@ -39,7 +39,7 @@ CREATE TABLE grupos_alimentares (
 
 CREATE TABLE alimentos (
     id serial primary key,
-    nome varchar(100) not null,
+    nome varchar(100) not null unique,
     grupo_alimentar_id integer NOT NULL references grupos_alimentares (id),
     calorias_kcal decimal(6,2) CHECK (calorias_kcal >= 0),
     proteinas_g decimal(6,2) CHECK (proteinas_g >= 0),
