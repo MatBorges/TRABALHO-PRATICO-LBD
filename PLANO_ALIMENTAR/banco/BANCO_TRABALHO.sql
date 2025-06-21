@@ -28,18 +28,25 @@ CREATE TABLE usuario_restricoes (
     primary key (usuario_id, restricao_id)
 );
 
--- TRANSFORMAR EM TABELA
-CREATE TYPE tipo_grupo_alimentar AS enum ('Frutas', 'Verduras', 'Cereais', 'Laticínios', 'Carnes', 'Doces');
+
+
+CREATE TABLE grupos_alimentares (
+    id serial primary key,
+    nome varchar(50) unique not null
+);
+
+
 
 CREATE TABLE alimentos (
     id serial primary key,
     nome varchar(100) not null,
-    grupo_alimentar tipo_grupo_alimentar,
+    grupo_alimentar_id integer NOT NULL references grupos_alimentares (id),
     calorias_kcal decimal(6,2) CHECK (calorias_kcal >= 0),
     proteinas_g decimal(6,2) CHECK (proteinas_g >= 0),
     carboidratos_g decimal(6,2) CHECK (carboidratos_g >= 0),
     gorduras_g decimal(6,2) CHECK (gorduras_g >= 0),
     sodio_mg decimal(6,2) CHECK (sodio_mg >= 0),
+    indice_glicemico smallint CHECK (indice_glicemico >= 0),
     lactose boolean,
     gluten boolean,
     vegano boolean
@@ -90,3 +97,29 @@ CREATE TABLE avaliacoes (
     comentario text,
     data_avaliacao timestamp default CURRENT_TIMESTAMP
 );
+
+
+CREATE FUNCTION public.fn_refeicoes_para_diabeticos(usuario_alvo integer) RETURNS TABLE(refeicao_id integer, nome text, tipo text, horario time without time zone)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM usuario_restricoes ur
+        JOIN restricoes r ON r.id = ur.restricao_id
+        WHERE ur.usuario_id = usuario_alvo AND r.nome ILIKE '%DIABETES%'
+    ) THEN
+        RETURN QUERY
+        SELECT rf.id, rf.nome::TEXT, rf.tipo::TEXT, rf.horario_sugerido
+        FROM refeicoes rf
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM refeicao_alimentos ra
+            JOIN alimentos a ON a.id = ra.alimento_id
+            WHERE ra.refeicao_id = rf.id AND a.indice_glicemico > 55
+        );
+    ELSE
+        RETURN QUERY SELECT id, nome::TEXT, tipo::TEXT, horario_sugerido FROM refeicoes;
+    END IF;
+END;
+$$;
