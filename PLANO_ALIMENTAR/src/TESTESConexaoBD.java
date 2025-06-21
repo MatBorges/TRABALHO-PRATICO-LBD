@@ -17,11 +17,9 @@ public class TESTESConexaoBD {
 
             String criarTabela = """
 
-                INSERT INTO grupos_alimentares (nome) VALUES
-                ('Verduras'),
-                ('Cereais'),
-                ('Carnes'),
-                ('Doces');
+                ALTER TABLE alimentos
+                ADD UNIQUE (nome);
+
                 
                 """;
 
