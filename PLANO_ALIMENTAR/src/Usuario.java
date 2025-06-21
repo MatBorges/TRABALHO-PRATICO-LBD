@@ -1,5 +1,5 @@
 public class Usuario {
-    
+
     private int id;
     private String nome;
     private String email;
@@ -10,6 +10,17 @@ public class Usuario {
     private boolean ativo;
 
     public Usuario(String nome, String email, java.sql.Date dataNascimento, String sexo, double pesoKg, int alturaCm, boolean ativo) {
+        this.nome = nome;
+        this.email = email;
+        this.dataNascimento = dataNascimento;
+        this.sexo = sexo;
+        this.pesoKg = pesoKg;
+        this.alturaCm = alturaCm;
+        this.ativo = ativo;
+    }
+
+    public Usuario(int id, String nome, String email, java.sql.Date dataNascimento, String sexo, double pesoKg, int alturaCm, boolean ativo) {
+        this.id = id;
         this.nome = nome;
         this.email = email;
         this.dataNascimento = dataNascimento;
@@ -96,7 +107,7 @@ public class Usuario {
 
     @Override
     public String toString() {
-        return String.format("Nome: %s | Email: %s | Nascimento: %s | Sexo: %s | Peso: %.2f | Altura: %d | Ativo: %b",
-                nome, email, dataNascimento, sexo, pesoKg, alturaCm, ativo);
+        return String.format("ID: %d | Nome: %s | Email: %s | Nascimento: %s | Sexo: %s | Peso: %.2f | Altura: %d | Ativo: %b",
+                id, nome, email, dataNascimento, sexo, pesoKg, alturaCm, ativo);
     }
 }

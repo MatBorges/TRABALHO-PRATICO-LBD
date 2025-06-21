@@ -30,6 +30,7 @@ public class UsuarioLogica {
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 Usuario p = new Usuario(
+                        rs.getInt("id"),
                         rs.getString("nome"),
                         rs.getString("email"),
                         rs.getDate("data_nascimento"),
