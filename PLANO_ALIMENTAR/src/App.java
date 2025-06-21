@@ -11,8 +11,11 @@ public class App {
         try (Connection conn = DriverManager.getConnection(URL, USER, SENHA);
              Scanner scan = new Scanner(System.in)) {
 
+
+            // Objetos entidades
             UsuarioLogica usuLog = new UsuarioLogica(conn);
             RestricaoLogica resLog = new RestricaoLogica(conn);
+            GrupoAlimentarLogica gaLog = new GrupoAlimentarLogica(conn);
 
             while (true) {
                 System.out.println("\nMenu PLANO ALIMENTAR:");
@@ -20,6 +23,8 @@ public class App {
                 System.out.println("2 - Consultar Usuarios");
                 System.out.println("3 - Cadastrar Restrição");
                 System.out.println("4 - Consultar Restrições");
+                System.out.println("5 - Cadastrar Grupo Alimentar");
+                System.out.println("6 - Consultar Grupo Alimentar");
                 System.out.println("0 - Sair");
                 System.out.print("Escolha uma opção: ");
                 int opcao = scan.nextInt();
@@ -30,6 +35,8 @@ public class App {
                     case 2 -> consultarUsuarios(usuLog);
                     case 3 -> cadastrarRestricao(scan, resLog);
                     case 4 -> consultarRestricoes(resLog);
+                    case 5 -> cadastrarGrupoAlimentar(scan, gaLog);
+                    case 6 -> consultarGruposAlimentares(gaLog);
                     case 0 -> {
                         System.out.println("Encerrando programa.");
                         return;
@@ -111,6 +118,22 @@ public class App {
     }
 
 
+    private static void cadastrarGrupoAlimentar(Scanner scan, GrupoAlimentarLogica gaLog) {
+        try {
+            System.out.print("Nome: ");
+            String nome = scan.nextLine().toUpperCase();          
+
+            GrupoAlimentar ga = new GrupoAlimentar(nome);
+            gaLog.adicionarGrupoAlimentar(ga);
+            System.out.println("Grupo Alimentar cadastrado com sucesso!");
+
+        } catch (Exception e) {
+            System.out.println("Erro: " + e.getMessage());
+            scan.nextLine();
+        }
+    }
+
+
     private static void consultarUsuarios(UsuarioLogica usuLog) {
         try {
             List<Usuario> lista = usuLog.listarUsuarios();
@@ -131,6 +154,18 @@ public class App {
             }
         } catch (SQLException e) {
             System.out.println("Erro ao consultar restrições: " + e.getMessage());
+        }
+    }
+    
+    
+    private static void consultarGruposAlimentares(GrupoAlimentarLogica gaLog) {
+        try {
+            List<GrupoAlimentar> lista = gaLog.listarGruposAlimentares();
+            for (GrupoAlimentar ga : lista) {
+                System.out.println(ga);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar Grupos Alimentares: " + e.getMessage());
         }
     }
 }

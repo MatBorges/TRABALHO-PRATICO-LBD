@@ -1,4 +1,7 @@
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class TESTESConexaoBD {
     public static void main(String[] args) {
@@ -14,11 +17,11 @@ public class TESTESConexaoBD {
 
             String criarTabela = """
 
-                CREATE TABLE restricoes (
-                    id serial primary key,
-                    nome varchar(100) unique not null,
-                    descricao text
-                );
+                INSERT INTO grupos_alimentares (nome) VALUES
+                ('Verduras'),
+                ('Cereais'),
+                ('Carnes'),
+                ('Doces');
                 
                 """;
 
