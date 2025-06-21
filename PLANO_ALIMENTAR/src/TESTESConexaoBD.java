@@ -14,20 +14,12 @@ public class TESTESConexaoBD {
 
             String criarTabela = """
 
-                CREATE TYPE tipo_sexo AS ENUM ('Masculino', 'Feminino');
-
-                CREATE TABLE usuarios (
+                CREATE TABLE restricoes (
                     id serial primary key,
-                    nome varchar(100) not null,
-                    email varchar(100) unique not null,
-                    data_nascimento date,
-                    sexo tipo_sexo,
-                    peso_kg decimal(5,2),
-                    altura_cm int,
-                    objetivo varchar(50),
-                    ativo boolean default TRUE
+                    nome varchar(100) unique not null,
+                    descricao text
                 );
-
+                
                 """;
 
 
