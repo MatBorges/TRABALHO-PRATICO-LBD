@@ -1,6 +1,7 @@
 
 
 CREATE TYPE tipo_sexo AS ENUM ('Masculino', 'Feminino');
+CREATE TYPE tipo_objetivo AS ENUM ('Perder Peso', 'Ganho de Massa', 'Dieta Saudavel');
 
 CREATE TABLE usuarios (
     id serial primary key,
@@ -10,7 +11,7 @@ CREATE TABLE usuarios (
     sexo tipo_sexo,
     peso_kg decimal(5,2),
     altura_cm int,
-    objetivo varchar(50), -- ver se mantem ou nõa
+    objetivo tipo_objetivo, -- ver se mantem ou nõa
     ativo boolean default TRUE
 );
 
@@ -77,7 +78,7 @@ CREATE TABLE planos_alimentares (
     id serial primary key,
     usuario_id int references usuarios(id) on delete cascade,
     data date default CURRENT_DATE,
-    objetivo text,
+    objetivo tipo_objetivo,
     observacoes text
 );
 
