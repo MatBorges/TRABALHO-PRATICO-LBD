@@ -1,29 +1,57 @@
+import java.util.Date;
+
 public class PlanoAlimentar {
     private int id;
-    private int refeicao_id;
-    private int ordem_refeicao;
+    private int usuario_id;
+    private Date data;
+    private String objetivo;
+    private String observacoes;
 
-    public PlanoAlimentar(int id, int ordem_refeicao, int refeicao_id) {
+    
+
+    public PlanoAlimentar(int id, int usuario_id, Date data, String objetivo, String observacoes) {
         this.id = id;
-        this.ordem_refeicao = ordem_refeicao;
-        this.refeicao_id = refeicao_id;
+        this.usuario_id = usuario_id;
+        this.data = data;
+        this.objetivo = objetivo;
+        this.observacoes = observacoes;
     }
+
+    
 
     public int getId() {
         return id;
     }
 
-    public int getRefeicao_id() {
-        return refeicao_id;
+
+
+    public int getUsuario_id() {
+        return usuario_id;
     }
 
-    public int getOrdem_refeicao() {
-        return ordem_refeicao;
+
+
+    public Date getData() {
+        return data;
     }
+
+
+
+    public String getObjetivo() {
+        return objetivo;
+    }
+
+
+
+    public String getObservacoes() {
+        return observacoes;
+    }
+
+
 
     @Override
     public String toString() {
-        return String.format("ID: %d | ID Refeição: %d | Ordem Refeição: %d",
-                id, refeicao_id, ordem_refeicao);
+        return String.format("ID: %d | ID Usuário: %d | Data: %s | Objetivo: %s | Observações: %s",
+                id, usuario_id, data, objetivo, observacoes);
     }
 }

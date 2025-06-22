@@ -17,8 +17,10 @@ public class PlanoAlimentarLogica {
             while (rs.next()) {
                 PlanoAlimentar p = new PlanoAlimentar(
                         rs.getInt("id"),
-                        rs.getInt("refeicao_id"),
-                        rs.getInt("ordem_refeicao")
+                        rs.getInt("usuario_id"),
+                        rs.getDate("data"),
+                        rs.getString("objetivo"),
+                        rs.getString("observacoes")
                 );
                 planosAlimentares.add(p);
             }
