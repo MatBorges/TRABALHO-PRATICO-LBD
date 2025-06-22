@@ -73,7 +73,7 @@ CREATE TABLE refeicao_alimentos (
 
 
 
-CREATE TABLE recomendacoes (
+CREATE TABLE planos_alimentares (
     id serial primary key,
     usuario_id int references usuarios(id) on delete cascade,
     data date default CURRENT_DATE,
@@ -82,16 +82,16 @@ CREATE TABLE recomendacoes (
 );
 
 
-CREATE TABLE recomendacao_refeicoes (
-    recomendacao_id int references recomendacoes(id) on delete cascade,
+CREATE TABLE plano_refeicoes (
+    plano_id int references planos_alimentares(id) on delete cascade,
     refeicao_id int references refeicoes(id),
     ordem_refeicao smallint, 
-    primary key (recomendacao_id, refeicao_id)
+    primary key (plano_id, refeicao_id)
 );
 
 CREATE TABLE avaliacoes (
     id serial primary key,
-    recomendacao_id int references recomendacoes(id) on delete cascade,
+    plano_id int references planos_alimentares(id) on delete cascade,
     usuario_id int references usuarios(id),
     nota smallint check (nota BETWEEN 1 AND 5),
     comentario text,
