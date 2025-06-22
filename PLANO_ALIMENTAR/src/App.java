@@ -35,7 +35,7 @@ public class App {
                 scan.nextLine();
 
                 switch (opcao) {
-                    case 1 -> cadastrarUsuario(scan, usuLog);
+                    case 1 -> cadastrarUsuario(scan, usuLog, resLog);
                     case 2 -> consultarUsuarios(usuLog);
                     case 3 -> cadastrarRestricao(scan, resLog);
                     case 4 -> consultarRestricoes(resLog);
@@ -55,51 +55,106 @@ public class App {
         }
     }
 
-    private static void cadastrarUsuario(Scanner scan, UsuarioLogica usuLog) {
+
+    private static void cadastrarUsuario(Scanner scan, UsuarioLogica usuLog, RestricaoLogica resLog) {
         try {
             System.out.print("Nome: ");
             String nome = scan.nextLine();
 
             System.out.print("Email: ");
             String email = scan.nextLine();
-            
-            System.out.print("Data de nascimento (AAAA-MM-DD): ");
-            java.sql.Date dataNascimento = java.sql.Date.valueOf(scan.nextLine());
-            
-            String sexo;
-            
-            while (true) {
-                System.out.print("Sexo (1 - Masculino ou 2 - Feminino): ");
-                int opcao = scan.nextInt();
-                if ((opcao != 1) && (opcao != 2)) {
-                    System.out.println("Opção inválida!");
+
+            java.sql.Date dataNascimento = null;
+            while (dataNascimento == null) {
+                System.out.print("Data de nascimento (AAAA-MM-DD): ");
+                try {
+                    dataNascimento = java.sql.Date.valueOf(scan.nextLine());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Formato de data inválido. Por favor, use o formato AAAA-MM-DD.");
                 }
-                else{
-                    if (opcao == 1) {
-                        sexo = "Masculino";
-                    }
-                    else{
-                        sexo = "Feminino";
-                    }
-                    break;
-                }                
             }
 
-            System.out.print("Peso (kg): ");
-            double peso = scan.nextDouble();
+            String sexo;
+            while (true) {
+                System.out.print("Sexo (1 - Masculino ou 2 - Feminino): ");
+                
+                String opcaoStr = scan.nextLine(); 
+                try {
+                    int opcao = Integer.parseInt(opcaoStr);
+                    if (opcao == 1) {
+                        sexo = "Masculino";
+                        break;
+                    } else if (opcao == 2) {
+                        sexo = "Feminino";
+                        break;
+                    } else {
+                        System.out.println("Opção inválida! Por favor, digite 1 para Masculino ou 2 para Feminino.");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Entrada inválida. Por favor, digite 1 ou 2.");
+                }
+            }
 
-            System.out.print("Altura (cm): ");
-            int altura = scan.nextInt();
+            double peso = 0;
+            while (peso <= 0) {
+                System.out.print("Peso (kg): ");
+                String pesoStr = scan.nextLine();
+                try {
+                    peso = Double.parseDouble(pesoStr);
+                    if (peso <= 0) {
+                        System.out.println("Peso inválido. Por favor, digite um valor maior que zero.");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Entrada inválida. Por favor, digite um número para o peso.");
+                }
+            }
+
+            int altura = 0;
+            while (altura <= 0) {
+                System.out.print("Altura (cm): ");
+                String alturaStr = scan.nextLine();
+                try {
+                    altura = Integer.parseInt(alturaStr);
+                    if (altura <= 0) {
+                        System.out.println("Altura inválida. Por favor, digite um valor maior que zero.");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Entrada inválida. Por favor, digite um número inteiro para a altura.");
+                }
+            }
 
             boolean ativo = true;
 
             Usuario p = new Usuario(nome, email, dataNascimento, sexo, peso, altura, ativo);
-            usuLog.adicionarUsuario(p);
-            System.out.println("Usuario cadastrada com sucesso!");
+            int usuarioId = usuLog.adicionarUsuario(p);
+
+            System.out.print("Deseja adicionar restrições? (s/n): ");
+            String resp = scan.nextLine().trim().toLowerCase();
+
+            if (resp.equals("s")) {
+                System.out.print("Selecione a Restrição:\n");
+                List<Restricao> lista = resLog.listarRestricoes();
+                for (Restricao r : lista) {
+                    System.out.printf("%d - %s\n", r.getId(), r.getNome());
+                }
+
+                System.out.print("Digite os IDs das restrições separadas por vírgula (ex: 1,3,5): ");
+                String[] ids = scan.nextLine().split(",");
+
+                for (String idStr : ids) {
+                    try {
+                        int restricaoId = Integer.parseInt(idStr.trim());
+                        usuLog.adicionarRestricaoParaUsuario(usuarioId, restricaoId);
+                    } catch (NumberFormatException e) {
+                        System.out.println("ID de restrição inválido foi ignorado: " + idStr);
+                    }
+                }
+            }
+
+            System.out.println("Usuário cadastrado com sucesso!");
 
         } catch (Exception e) {
-            System.out.println("Erro: " + e.getMessage());
-            scan.nextLine();
+            System.out.println("Ocorreu um erro inesperado durante o cadastro: " + e.getMessage());
         }
     }
 
@@ -222,7 +277,7 @@ public class App {
                 gluten,
                 vegano);
             aliLog.adicionarAlimento(a);
-            System.out.println("Grupo Alimentar cadastrado com sucesso!");
+            System.out.println("Alimento cadastrado com sucesso!");
 
         } catch (Exception e) {
             System.out.println("Erro: " + e.getMessage());
