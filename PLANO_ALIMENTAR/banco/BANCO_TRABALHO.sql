@@ -105,6 +105,28 @@ INSERT INTO public.restricoes VALUES (5, 'Vegetariano', 'Evita carne e derivados
 INSERT INTO public.restricoes VALUES (3, 'Lactose', 'Evita alimentos com lactose');
 INSERT INTO public.restricoes VALUES (4, 'Glúten', 'Evita alimentos com glúten');
 
+INSERT INTO usuarios (nome, email, data_nascimento, sexo, peso_kg, altura_cm, objetivo, ativo) VALUES
+('João Silva', 'joao.silva@email.com', '1990-05-15', 'Masculino', 85.50, 180, 'Ganho de Massa', TRUE),
+('Maria Souza', 'maria.souza@email.com', '1992-08-22', 'Feminino', 62.10, 165, 'Perder Peso', TRUE),
+('Pedro Santos', 'pedro.santos@email.com', '1988-11-30', 'Masculino', 78.00, 175, 'Dieta Saudavel', TRUE),
+('Ana Lima', 'ana.lima@email.com', '1995-03-10', 'Feminino', 58.75, 160, 'Perder Peso', TRUE),
+('Carlos Oliveira', 'carlos.oliver@email.com', '1985-01-20', 'Masculino', 90.20, 185, 'Ganho de Massa', TRUE),
+('Mariana Costa', 'mariana.costa@email.com', '1998-07-01', 'Feminino', 60.00, 170, 'Dieta Saudavel', TRUE),
+('Fernando Alves', 'fernando.alves@email.com', '1991-04-05', 'Masculino', 75.30, 178, 'Perder Peso', TRUE),
+('Julia Rocha', 'julia.rocha@email.com', '1993-09-12', 'Feminino', 55.90, 162, 'Perder Peso', TRUE),
+('Rafael Pereira', 'rafael.pereira@email.com', '1987-06-25', 'Masculino', 88.90, 182, 'Ganho de Massa', TRUE),
+('Beatriz Gomes', 'beatriz.gomes@email.com', '1996-02-18', 'Feminino', 68.30, 172, 'Dieta Saudavel', TRUE),
+('Lucas Martins', 'lucas.martins@email.com', '1989-10-03', 'Masculino', 72.40, 170, 'Perder Peso', TRUE),
+('Amanda Ribeiro', 'amanda.ribeiro@email.com', '1994-12-08', 'Feminino', 59.50, 168, 'Dieta Saudavel', TRUE),
+('Thiago Fernandes', 'thiago.fernandes@email.com', '1986-07-14', 'Masculino', 81.60, 179, 'Ganho de Massa', TRUE),
+('Priscila Cavalcante', 'priscila.cava@email.com', '1997-01-28', 'Feminino', 63.80, 166, 'Perder Peso', TRUE),
+('Daniel Rodrigues', 'daniel.rodri@email.com', '1990-09-01', 'Masculino', 80.10, 176, 'Dieta Saudavel', TRUE),
+('Gabriela Nunes', 'gabriela.nunes@email.com', '1991-04-19', 'Feminino', 57.20, 163, 'Perder Peso', TRUE),
+('Felipe Barbosa', 'felipe.barbosa@email.com', '1984-08-07', 'Masculino', 93.00, 183, 'Ganho de Massa', TRUE),
+('Larissa Freitas', 'larissa.freitas@email.com', '1999-05-23', 'Feminino', 61.50, 171, 'Dieta Saudavel', TRUE),
+('Gustavo Dias', 'gustavo.dias@email.com', '1983-03-02', 'Masculino', 76.80, 174, 'Perder Peso', TRUE),
+('Isabela Mendes', 'isabela.mendes@email.com', '1990-11-11', 'Feminino', 65.40, 169, 'Ganho de Massa', TRUE);
+
 INSERT INTO grupos_alimentares (nome) VALUES
 ('Frutas'),
 ('Vegetais'),
