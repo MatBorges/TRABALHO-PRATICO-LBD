@@ -19,6 +19,8 @@ public class App {
             GrupoAlimentarLogica gaLog = new GrupoAlimentarLogica(conn);
             AlimentoLogica aliLog = new AlimentoLogica(conn);
             RefeicaoLogica refLog = new RefeicaoLogica(conn);
+            AvaliacaoLogica avaLog = new AvaliacaoLogica(conn);
+            PlanoAlimentarLogica plaLog = new PlanoAlimentarLogica(conn);
 
             while (true) {
                 System.out.println("\nMenu PLANO ALIMENTAR:");
@@ -31,6 +33,8 @@ public class App {
                 System.out.println("7 - Cadastrar Alimento");
                 System.out.println("8 - Consultar Alimentos");
                 System.out.println("9 - Consultar Refeições");
+                System.out.println("10 - Fazer Avaliação");
+                System.out.println("11 - Consultar Avaliações");
                 System.out.println("0 - Sair");
                 System.out.print("Escolha uma opção: ");
                 int opcao = scan.nextInt();
@@ -46,6 +50,8 @@ public class App {
                     case 7 -> cadastrarAlimento(scan, aliLog, gaLog);
                     case 8 -> consultarAlimentos(aliLog);
                     case 9 -> consultarRefeicoes(refLog);
+                    case 10 -> fazerAvaliacao(scan, avaLog, plaLog);
+                    case 11 -> consultarAvaliacoes(avaLog);
                     case 0 -> {
                         System.out.println("Encerrando programa.");
                         return;
@@ -203,7 +209,7 @@ public class App {
             System.out.println("Restrição cadastrada com sucesso!");
 
         } catch (Exception e) {
-            System.out.println("Erro: " + e.getMessage());
+            System.out.println("Erro ao cadastrar Restrição: " + e.getMessage());
             scan.nextLine();
         }
     }
@@ -317,6 +323,45 @@ public class App {
     }
 
 
+    private static void fazerAvaliacao(Scanner scan, AvaliacaoLogica avaLog, PlanoAlimentarLogica plaLog) {
+        try {
+            System.out.print("Digite o código do usuário que ira avaliar: ");
+            int usuarioId = scan.nextInt();
+            int nota;
+            
+            List<PlanoAlimentar> lista = plaLog.listarPlanosAlimentares(usuarioId);
+
+            if (lista.isEmpty()) {
+                System.out.println("Nenhum plano alimentar encontrado!");
+            } else {
+                for(PlanoAlimentar pa : lista){
+                    System.out.println(pa);
+                }
+                System.out.print("Digite o código do Plano Alimentar que deseja avaliar: ");
+                int planoId = scan.nextInt();
+
+                System.out.println("Comentário:");
+                String comentario = scan.nextLine();
+                while (true) {
+                    System.out.println("Nota: (1 a 5)");
+                    nota = scan.nextInt();
+                    if ((nota < 1) || (nota > 5)) {
+                        System.out.println("Valor inválido!");
+                    }
+                    else{
+                        break;
+                    }                    
+                }
+                Avaliacao a = new Avaliacao(planoId, usuarioId, nota, comentario);
+                avaLog.adicionarAvaliacao(a);
+                System.out.println("Avaliação cadastrada com sucesso, Obrigado!");
+            }
+        } catch (Exception e){
+            System.out.println("Erro ao fazer avaliação: " + e.getMessage());
+        }
+    }
+
+
     private static void consultarUsuarios(UsuarioLogica usuLog) {
         try {
             List<Usuario> lista = usuLog.listarUsuarios();
@@ -373,6 +418,18 @@ public class App {
             }
         } catch (SQLException e) {
             System.out.println("Erro ao consultar Refeicoes: " + e.getMessage());
+        }
+    }
+
+
+    private static void consultarAvaliacoes(AvaliacaoLogica avaLog) {
+        try {
+            List<Avaliacao> lista = avaLog.listarAvaliacoes();
+            for (Avaliacao a : lista) {
+                System.out.println(a);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar Avaliacoes: " + e.getMessage());
         }
     }
 }
