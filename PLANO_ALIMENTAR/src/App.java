@@ -35,6 +35,7 @@ public class App {
                 System.out.println("9 - Consultar Refeições");
                 System.out.println("10 - Fazer Avaliação");
                 System.out.println("11 - Consultar Avaliações");
+                System.out.println("12 - Gerar Plano Alimentar");
                 System.out.println("0 - Sair");
                 System.out.print("Escolha uma opção: ");
                 int opcao = scan.nextInt();
@@ -52,6 +53,7 @@ public class App {
                     case 9 -> consultarRefeicoes(refLog);
                     case 10 -> fazerAvaliacao(scan, avaLog, plaLog);
                     case 11 -> consultarAvaliacoes(avaLog);
+                    case 12 -> gerarPlanoAlimentar(scan, plaLog);
                     case 0 -> {
                         System.out.println("Encerrando programa.");
                         return;
@@ -430,6 +432,22 @@ public class App {
             }
         } catch (SQLException e) {
             System.out.println("Erro ao consultar Avaliacoes: " + e.getMessage());
+        }
+    }
+
+
+    private static void gerarPlanoAlimentar(Scanner scan, PlanoAlimentarLogica plaLog) {
+        try {
+            System.out.print("Informe o ID do usuário: ");
+            int usuarioId = scan.nextInt();
+            
+            plaLog.gerarPlanoAlimentar(usuarioId);
+            System.out.println("Plano Alimentar gerado com sucesso!");
+
+
+        } catch (Exception e) {
+            System.out.println("Erro ao Gerar Plano Alimentar: " + e.getMessage());
+            scan.nextLine();
         }
     }
 }

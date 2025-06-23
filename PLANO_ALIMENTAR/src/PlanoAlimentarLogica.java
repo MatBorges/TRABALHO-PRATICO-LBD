@@ -9,6 +9,15 @@ public class PlanoAlimentarLogica {
         this.conn = conn;
     }
 
+    public void gerarPlanoAlimentar(int usuarioId) throws SQLException {
+        String sql = "select gerar_plano_automatico(?);";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, usuarioId);
+            stmt.executeQuery();
+        }
+    }
+
+
     public List<PlanoAlimentar> listarPlanosAlimentares(int usuarioId) throws SQLException {
         List<PlanoAlimentar> planosAlimentares = new ArrayList<>();
         String sql = "SELECT * FROM planos_alimentares WHERE usuario_id = ?";

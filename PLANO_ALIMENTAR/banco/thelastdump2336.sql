@@ -18,16 +18,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: tipo_grupo_alimentar; Type: TYPE; Schema: public; Owner: -
+-- Name: tipo_objetivo; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.tipo_grupo_alimentar AS ENUM (
-    'Frutas',
-    'Verduras',
-    'Cereais',
-    'Laticínios',
-    'Carnes',
-    'Doces'
+CREATE TYPE public.tipo_objetivo AS ENUM (
+    'Perder peso',
+    'Ganhar massa',
+    'Dieta Saudavel'
 );
 
 
@@ -55,6 +52,93 @@ CREATE TYPE public.tipo_sexo AS ENUM (
 
 
 --
+-- Name: fn_refeicoes_objetivo(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.fn_refeicoes_objetivo(usuario_alvo_id integer) RETURNS TABLE(refeicao_id integer, nome_refeicao character varying, tipo_refeicao public.tipo_refeicao, horario_sugerido time without time zone, total_calorias numeric, total_proteinas numeric, total_gorduras numeric)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_objetivo tipo_objetivo;
+BEGIN
+    
+    SELECT objetivo INTO v_objetivo FROM usuarios WHERE id = usuario_alvo_id;
+
+   
+    IF v_objetivo = 'Perder peso' THEN
+        RETURN QUERY
+        WITH info_refeicoes AS (
+            SELECT 
+                ra.refeicao_id,
+                SUM(a.calorias_kcal * (ra.quantidade_gramas / 100.0)) AS calorias,
+                SUM(a.proteinas_g * (ra.quantidade_gramas / 100.0)) AS proteinas,
+                SUM(a.gorduras_g * (ra.quantidade_gramas / 100.0)) AS gorduras
+            FROM refeicao_alimentos ra JOIN alimentos a ON ra.alimento_id = a.id
+            GROUP BY ra.refeicao_id
+        ),
+        refeicoes_elegiveis AS (
+            SELECT f.refeicao_id FROM fn_refeicoes_para_diabeticos(usuario_alvo_id) f
+            INTERSECT
+            SELECT f.refeicao_id FROM fn_refeicoes_sem_lactose_gluten(usuario_alvo_id) f
+        )
+        SELECT r.id, r.nome, r.tipo, r.horario_sugerido, 
+               ROUND(ir.calorias, 2), ROUND(ir.proteinas, 2), ROUND(ir.gorduras, 2)
+        FROM refeicoes r
+        JOIN info_refeicoes ir ON r.id = ir.refeicao_id
+        WHERE r.id IN (SELECT re.refeicao_id FROM refeicoes_elegiveis re)
+        ORDER BY ir.calorias ASC;
+
+    ELSIF v_objetivo = 'Ganhar massa' THEN
+        RETURN QUERY
+        WITH info_refeicoes AS (
+            SELECT 
+                ra.refeicao_id,
+                SUM(a.calorias_kcal * (ra.quantidade_gramas / 100.0)) AS calorias,
+                SUM(a.proteinas_g * (ra.quantidade_gramas / 100.0)) AS proteinas,
+                SUM(a.gorduras_g * (ra.quantidade_gramas / 100.0)) AS gorduras
+            FROM refeicao_alimentos ra JOIN alimentos a ON ra.alimento_id = a.id
+            GROUP BY ra.refeicao_id
+        ),
+        refeicoes_elegiveis AS (
+            SELECT f.refeicao_id FROM fn_refeicoes_para_diabeticos(usuario_alvo_id) f
+            INTERSECT
+            SELECT f.refeicao_id FROM fn_refeicoes_sem_lactose_gluten(usuario_alvo_id) f
+        )
+        SELECT r.id, r.nome, r.tipo, r.horario_sugerido, 
+               ROUND(ir.calorias, 2), ROUND(ir.proteinas, 2), ROUND(ir.gorduras, 2)
+        FROM refeicoes r
+        JOIN info_refeicoes ir ON r.id = ir.refeicao_id
+        WHERE r.id IN (SELECT re.refeicao_id FROM refeicoes_elegiveis re)
+        ORDER BY ir.proteinas DESC, ir.calorias DESC;
+
+    ELSE
+        RETURN QUERY
+        WITH info_refeicoes AS (
+            SELECT 
+                ra.refeicao_id,
+                SUM(a.calorias_kcal * (ra.quantidade_gramas / 100.0)) AS calorias,
+                SUM(a.proteinas_g * (ra.quantidade_gramas / 100.0)) AS proteinas,
+                SUM(a.gorduras_g * (ra.quantidade_gramas / 100.0)) AS gorduras
+            FROM refeicao_alimentos ra JOIN alimentos a ON ra.alimento_id = a.id
+            GROUP BY ra.refeicao_id
+        ),
+        refeicoes_elegiveis AS (
+            SELECT f.refeicao_id FROM fn_refeicoes_para_diabeticos(usuario_alvo_id) f
+            INTERSECT
+            SELECT f.refeicao_id FROM fn_refeicoes_sem_lactose_gluten(usuario_alvo_id) f
+        )
+        SELECT r.id, r.nome, r.tipo, r.horario_sugerido, 
+               ROUND(ir.calorias, 2), ROUND(ir.proteinas, 2), ROUND(ir.gorduras, 2)
+        FROM refeicoes r
+        JOIN info_refeicoes ir ON r.id = ir.refeicao_id
+        WHERE r.id IN (SELECT re.refeicao_id FROM refeicoes_elegiveis re)
+        ORDER BY r.horario_sugerido DESC;
+    END IF;
+END;
+$$;
+
+
+--
 -- Name: fn_refeicoes_para_diabeticos(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -62,61 +146,113 @@ CREATE FUNCTION public.fn_refeicoes_para_diabeticos(usuario_alvo integer) RETURN
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    IF EXISTS (
+  IF EXISTS (
+    SELECT 1
+      FROM public.usuario_restricoes ur
+      JOIN public.restricoes r ON r.id = ur.restricao_id
+     WHERE ur.usuario_id = usuario_alvo
+       AND r.nome ILIKE '%Diabetes%'
+  ) THEN
+    RETURN QUERY
+      SELECT
+        rf.id,
+        rf.nome::TEXT,
+        rf.tipo::TEXT,
+        rf.horario_sugerido
+      FROM public.refeicoes rf
+     WHERE NOT EXISTS (
         SELECT 1
-        FROM usuario_restricoes ur
-        JOIN restricoes r ON r.id = ur.restricao_id
-        WHERE ur.usuario_id = usuario_alvo AND r.nome ILIKE '%Diabetes%'
-    ) THEN
-        RETURN QUERY
-        SELECT rf.id, rf.nome::TEXT, rf.tipo::TEXT, rf.horario_sugerido
-        FROM refeicoes rf
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM refeicao_alimentos ra
-            JOIN alimentos a ON a.id = ra.alimento_id
-            WHERE ra.refeicao_id = rf.id AND a.indice_glicemico > 55
-        )ORDER BY rf.horario_sugerido;
-    ELSE
-        RETURN QUERY SELECT id, nome::TEXT, tipo::TEXT, horario_sugerido 
-		FROM refeicoes
-		ORDER BY horario_sugerido;
-    END IF;
+          FROM public.refeicao_alimentos ra
+          JOIN public.alimentos a ON a.id = ra.alimento_id
+         WHERE ra.refeicao_id = rf.id
+           AND a.indice_glicemico > 55
+      )
+     ORDER BY rf.horario_sugerido;
+  ELSE
+    RETURN QUERY
+      SELECT
+        rf.id,
+        rf.nome::TEXT,
+        rf.tipo::TEXT,
+        rf.horario_sugerido
+      FROM public.refeicoes rf
+     ORDER BY rf.horario_sugerido;
+  END IF;
 END;
 $$;
 
 
 --
--- Name: fn_refeicoes_sem_lactose_ou_gluten(integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: fn_refeicoes_sem_lactose_gluten(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.fn_refeicoes_sem_lactose_ou_gluten(usuario_alvo integer) RETURNS TABLE(refeicao_id integer, nome text, tipo text, horario time without time zone)
+CREATE FUNCTION public.fn_refeicoes_sem_lactose_gluten(usuario_alvo integer) RETURNS TABLE(refeicao_id integer, nome text, tipo text, horario time without time zone)
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN QUERY
-    SELECT rf.id, rf.nome::TEXT, rf.tipo::TEXT, rf.horario_sugerido
-    FROM refeicoes rf
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM refeicao_alimentos ra
-        JOIN alimentos a ON a.id = ra.alimento_id
-        WHERE ra.refeicao_id = rf.id
-        AND (
-            (a.lactose = TRUE AND EXISTS (
-                SELECT 1 FROM usuario_restricoes ur
-                JOIN restricoes r ON r.id = ur.restricao_id
-                WHERE ur.usuario_id = usuario_alvo
-                  AND r.nome ILIKE '%Lactose%'
-            )) OR
-            (a.gluten = TRUE AND EXISTS (
-                SELECT 1 FROM usuario_restricoes ur
-                JOIN restricoes r ON r.id = ur.restricao_id
-                WHERE ur.usuario_id = usuario_alvo
-                  AND r.nome ILIKE '%Glúten%'
-            ))
-        )
-    )ORDER BY rf.horario_sugerido;
+  RETURN QUERY
+    SELECT
+      rf.id,
+      rf.nome::TEXT,
+      rf.tipo::TEXT,
+      rf.horario_sugerido
+    FROM public.refeicoes rf
+   WHERE NOT EXISTS (
+      SELECT 1
+        FROM public.refeicao_alimentos ra
+        JOIN public.alimentos a ON a.id = ra.alimento_id
+       WHERE ra.refeicao_id = rf.id
+         AND (
+           (a.lactose = TRUE AND EXISTS (
+              SELECT 1 FROM public.usuario_restricoes ur
+              JOIN public.restricoes r ON r.id = ur.restricao_id
+             WHERE ur.usuario_id = usuario_alvo
+               AND r.nome ILIKE '%Lactose%'
+           ))
+        OR (a.gluten = TRUE AND EXISTS (
+              SELECT 1 FROM public.usuario_restricoes ur
+              JOIN public.restricoes r ON r.id = ur.restricao_id
+             WHERE ur.usuario_id = usuario_alvo
+               AND r.nome ILIKE '%Glúten%'
+           ))
+         )
+    )
+   ORDER BY rf.horario_sugerido;
+END;
+$$;
+
+
+--
+-- Name: gerar_plano_automatico(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.gerar_plano_automatico(usuario_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+plano_id INT;
+ordem SMALLINT := 1;
+rec RECORD;
+BEGIN
+  INSERT INTO planos_alimentares(usuario_id, objetivo, observacoes)
+  VALUES (
+    usuario_id,
+    (SELECT objetivo FROM usuarios WHERE id = usuario_id),
+    'Plano automático'
+  )
+  RETURNING id INTO plano_id;
+
+  FOR rec IN
+    SELECT refeicao_id
+      FROM fn_refeicoes_objetivo(usuario_id)
+     ORDER BY horario_sugerido
+  LOOP
+    INSERT INTO planos_refeicoes(plano_id, refeicao_id, ordem_refeicao)
+    VALUES (plano_id, rec.refeicao_id, ordem);
+    ordem := ordem + 1;
+  END LOOP;
+
+  RETURN plano_id;
 END;
 $$;
 
@@ -233,6 +369,19 @@ CREATE SEQUENCE public.grupos_alimentares_id_seq
 --
 
 ALTER SEQUENCE public.grupos_alimentares_id_seq OWNED BY public.grupos_alimentares.id;
+
+
+--
+-- Name: metas_nutricionais; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.metas_nutricionais (
+    usuario_id integer NOT NULL,
+    calorias_kcal numeric(6,2),
+    proteinas_g numeric(6,2),
+    carboidratos_g numeric(6,2),
+    gorduras_g numeric(6,2)
+);
 
 
 --
@@ -375,8 +524,8 @@ CREATE TABLE public.usuarios (
     sexo public.tipo_sexo,
     peso_kg numeric(5,2),
     altura_cm integer,
-    objetivo character varying(50),
-    ativo boolean DEFAULT true
+    ativo boolean DEFAULT true,
+    objetivo public.tipo_objetivo NOT NULL
 );
 
 
@@ -783,15 +932,154 @@ INSERT INTO public.grupos_alimentares VALUES (10, 'Peixes e Frutos do Mar');
 
 
 --
+-- Data for Name: metas_nutricionais; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.metas_nutricionais VALUES (1, 1600.00, 100.00, 180.00, 40.00);
+INSERT INTO public.metas_nutricionais VALUES (2, 2000.00, 80.00, 210.00, 60.00);
+INSERT INTO public.metas_nutricionais VALUES (3, 2800.00, 130.00, 300.00, 80.00);
+INSERT INTO public.metas_nutricionais VALUES (4, 1500.00, 90.00, 170.00, 40.00);
+INSERT INTO public.metas_nutricionais VALUES (5, 1600.00, 100.00, 180.00, 45.00);
+INSERT INTO public.metas_nutricionais VALUES (6, 2700.00, 120.00, 280.00, 75.00);
+INSERT INTO public.metas_nutricionais VALUES (7, 2000.00, 80.00, 210.00, 60.00);
+INSERT INTO public.metas_nutricionais VALUES (8, 2000.00, 75.00, 200.00, 60.00);
+INSERT INTO public.metas_nutricionais VALUES (9, 2600.00, 120.00, 290.00, 75.00);
+INSERT INTO public.metas_nutricionais VALUES (10, 1500.00, 85.00, 165.00, 45.00);
+
+
+--
 -- Data for Name: planos_alimentares; Type: TABLE DATA; Schema: public; Owner: -
 --
 
+INSERT INTO public.planos_alimentares VALUES (3, 3, '2025-06-23', 'Ganhar massa', 'Plano automático');
+INSERT INTO public.planos_alimentares VALUES (4, 2, '2025-06-23', 'Dieta Saudavel', 'Plano automático');
+INSERT INTO public.planos_alimentares VALUES (6, 5, '2025-06-23', 'Perder peso', 'Plano automático');
 
 
 --
 -- Data for Name: planos_refeicoes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
+INSERT INTO public.planos_refeicoes VALUES (3, 21, 1);
+INSERT INTO public.planos_refeicoes VALUES (3, 11, 2);
+INSERT INTO public.planos_refeicoes VALUES (3, 1, 3);
+INSERT INTO public.planos_refeicoes VALUES (3, 46, 4);
+INSERT INTO public.planos_refeicoes VALUES (3, 26, 5);
+INSERT INTO public.planos_refeicoes VALUES (3, 6, 6);
+INSERT INTO public.planos_refeicoes VALUES (3, 41, 7);
+INSERT INTO public.planos_refeicoes VALUES (3, 16, 8);
+INSERT INTO public.planos_refeicoes VALUES (3, 51, 9);
+INSERT INTO public.planos_refeicoes VALUES (3, 31, 10);
+INSERT INTO public.planos_refeicoes VALUES (3, 36, 11);
+INSERT INTO public.planos_refeicoes VALUES (3, 14, 12);
+INSERT INTO public.planos_refeicoes VALUES (3, 9, 13);
+INSERT INTO public.planos_refeicoes VALUES (3, 29, 14);
+INSERT INTO public.planos_refeicoes VALUES (3, 44, 15);
+INSERT INTO public.planos_refeicoes VALUES (3, 12, 16);
+INSERT INTO public.planos_refeicoes VALUES (3, 42, 17);
+INSERT INTO public.planos_refeicoes VALUES (3, 47, 18);
+INSERT INTO public.planos_refeicoes VALUES (3, 2, 19);
+INSERT INTO public.planos_refeicoes VALUES (3, 27, 20);
+INSERT INTO public.planos_refeicoes VALUES (3, 7, 21);
+INSERT INTO public.planos_refeicoes VALUES (3, 32, 22);
+INSERT INTO public.planos_refeicoes VALUES (3, 17, 23);
+INSERT INTO public.planos_refeicoes VALUES (3, 52, 24);
+INSERT INTO public.planos_refeicoes VALUES (3, 22, 25);
+INSERT INTO public.planos_refeicoes VALUES (3, 37, 26);
+INSERT INTO public.planos_refeicoes VALUES (3, 19, 27);
+INSERT INTO public.planos_refeicoes VALUES (3, 34, 28);
+INSERT INTO public.planos_refeicoes VALUES (3, 49, 29);
+INSERT INTO public.planos_refeicoes VALUES (3, 4, 30);
+INSERT INTO public.planos_refeicoes VALUES (3, 54, 31);
+INSERT INTO public.planos_refeicoes VALUES (3, 39, 32);
+INSERT INTO public.planos_refeicoes VALUES (3, 24, 33);
+INSERT INTO public.planos_refeicoes VALUES (3, 23, 34);
+INSERT INTO public.planos_refeicoes VALUES (3, 13, 35);
+INSERT INTO public.planos_refeicoes VALUES (3, 43, 36);
+INSERT INTO public.planos_refeicoes VALUES (3, 3, 37);
+INSERT INTO public.planos_refeicoes VALUES (3, 48, 38);
+INSERT INTO public.planos_refeicoes VALUES (3, 28, 39);
+INSERT INTO public.planos_refeicoes VALUES (3, 18, 40);
+INSERT INTO public.planos_refeicoes VALUES (3, 53, 41);
+INSERT INTO public.planos_refeicoes VALUES (3, 8, 42);
+INSERT INTO public.planos_refeicoes VALUES (3, 33, 43);
+INSERT INTO public.planos_refeicoes VALUES (3, 25, 44);
+INSERT INTO public.planos_refeicoes VALUES (3, 38, 45);
+INSERT INTO public.planos_refeicoes VALUES (3, 15, 46);
+INSERT INTO public.planos_refeicoes VALUES (3, 45, 47);
+INSERT INTO public.planos_refeicoes VALUES (3, 50, 48);
+INSERT INTO public.planos_refeicoes VALUES (3, 5, 49);
+INSERT INTO public.planos_refeicoes VALUES (3, 30, 50);
+INSERT INTO public.planos_refeicoes VALUES (3, 10, 51);
+INSERT INTO public.planos_refeicoes VALUES (3, 35, 52);
+INSERT INTO public.planos_refeicoes VALUES (3, 20, 53);
+INSERT INTO public.planos_refeicoes VALUES (3, 55, 54);
+INSERT INTO public.planos_refeicoes VALUES (3, 40, 55);
+INSERT INTO public.planos_refeicoes VALUES (4, 11, 1);
+INSERT INTO public.planos_refeicoes VALUES (4, 46, 2);
+INSERT INTO public.planos_refeicoes VALUES (4, 26, 3);
+INSERT INTO public.planos_refeicoes VALUES (4, 16, 4);
+INSERT INTO public.planos_refeicoes VALUES (4, 14, 5);
+INSERT INTO public.planos_refeicoes VALUES (4, 9, 6);
+INSERT INTO public.planos_refeicoes VALUES (4, 29, 7);
+INSERT INTO public.planos_refeicoes VALUES (4, 42, 8);
+INSERT INTO public.planos_refeicoes VALUES (4, 37, 9);
+INSERT INTO public.planos_refeicoes VALUES (4, 19, 10);
+INSERT INTO public.planos_refeicoes VALUES (4, 34, 11);
+INSERT INTO public.planos_refeicoes VALUES (4, 49, 12);
+INSERT INTO public.planos_refeicoes VALUES (4, 4, 13);
+INSERT INTO public.planos_refeicoes VALUES (4, 54, 14);
+INSERT INTO public.planos_refeicoes VALUES (4, 39, 15);
+INSERT INTO public.planos_refeicoes VALUES (4, 24, 16);
+INSERT INTO public.planos_refeicoes VALUES (4, 13, 17);
+INSERT INTO public.planos_refeicoes VALUES (4, 43, 18);
+INSERT INTO public.planos_refeicoes VALUES (4, 48, 19);
+INSERT INTO public.planos_refeicoes VALUES (4, 3, 20);
+INSERT INTO public.planos_refeicoes VALUES (4, 28, 21);
+INSERT INTO public.planos_refeicoes VALUES (4, 25, 22);
+INSERT INTO public.planos_refeicoes VALUES (4, 38, 23);
+INSERT INTO public.planos_refeicoes VALUES (4, 15, 24);
+INSERT INTO public.planos_refeicoes VALUES (4, 45, 25);
+INSERT INTO public.planos_refeicoes VALUES (4, 30, 26);
+INSERT INTO public.planos_refeicoes VALUES (4, 10, 27);
+INSERT INTO public.planos_refeicoes VALUES (4, 35, 28);
+INSERT INTO public.planos_refeicoes VALUES (4, 20, 29);
+INSERT INTO public.planos_refeicoes VALUES (4, 55, 30);
+INSERT INTO public.planos_refeicoes VALUES (4, 40, 31);
+INSERT INTO public.planos_refeicoes VALUES (6, 21, 1);
+INSERT INTO public.planos_refeicoes VALUES (6, 46, 2);
+INSERT INTO public.planos_refeicoes VALUES (6, 6, 3);
+INSERT INTO public.planos_refeicoes VALUES (6, 16, 4);
+INSERT INTO public.planos_refeicoes VALUES (6, 14, 5);
+INSERT INTO public.planos_refeicoes VALUES (6, 9, 6);
+INSERT INTO public.planos_refeicoes VALUES (6, 29, 7);
+INSERT INTO public.planos_refeicoes VALUES (6, 12, 8);
+INSERT INTO public.planos_refeicoes VALUES (6, 42, 9);
+INSERT INTO public.planos_refeicoes VALUES (6, 7, 10);
+INSERT INTO public.planos_refeicoes VALUES (6, 52, 11);
+INSERT INTO public.planos_refeicoes VALUES (6, 37, 12);
+INSERT INTO public.planos_refeicoes VALUES (6, 19, 13);
+INSERT INTO public.planos_refeicoes VALUES (6, 34, 14);
+INSERT INTO public.planos_refeicoes VALUES (6, 49, 15);
+INSERT INTO public.planos_refeicoes VALUES (6, 4, 16);
+INSERT INTO public.planos_refeicoes VALUES (6, 54, 17);
+INSERT INTO public.planos_refeicoes VALUES (6, 39, 18);
+INSERT INTO public.planos_refeicoes VALUES (6, 24, 19);
+INSERT INTO public.planos_refeicoes VALUES (6, 13, 20);
+INSERT INTO public.planos_refeicoes VALUES (6, 28, 21);
+INSERT INTO public.planos_refeicoes VALUES (6, 18, 22);
+INSERT INTO public.planos_refeicoes VALUES (6, 25, 23);
+INSERT INTO public.planos_refeicoes VALUES (6, 38, 24);
+INSERT INTO public.planos_refeicoes VALUES (6, 15, 25);
+INSERT INTO public.planos_refeicoes VALUES (6, 45, 26);
+INSERT INTO public.planos_refeicoes VALUES (6, 5, 27);
+INSERT INTO public.planos_refeicoes VALUES (6, 50, 28);
+INSERT INTO public.planos_refeicoes VALUES (6, 30, 29);
+INSERT INTO public.planos_refeicoes VALUES (6, 10, 30);
+INSERT INTO public.planos_refeicoes VALUES (6, 35, 31);
+INSERT INTO public.planos_refeicoes VALUES (6, 20, 32);
+INSERT INTO public.planos_refeicoes VALUES (6, 55, 33);
+INSERT INTO public.planos_refeicoes VALUES (6, 40, 34);
 
 
 --
@@ -1015,25 +1303,44 @@ INSERT INTO public.restricoes VALUES (4, 'Glúten', 'Evita alimentos com glúten
 -- Data for Name: usuario_restricoes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.usuario_restricoes VALUES (1, 1);
-INSERT INTO public.usuario_restricoes VALUES (1, 3);
+INSERT INTO public.usuario_restricoes VALUES (1, 2);
+INSERT INTO public.usuario_restricoes VALUES (2, 3);
+INSERT INTO public.usuario_restricoes VALUES (2, 4);
+INSERT INTO public.usuario_restricoes VALUES (4, 5);
 INSERT INTO public.usuario_restricoes VALUES (5, 1);
+INSERT INTO public.usuario_restricoes VALUES (6, 3);
+INSERT INTO public.usuario_restricoes VALUES (7, 5);
+INSERT INTO public.usuario_restricoes VALUES (8, 4);
+INSERT INTO public.usuario_restricoes VALUES (10, 2);
+INSERT INTO public.usuario_restricoes VALUES (10, 1);
 
 
 --
 -- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.usuarios VALUES (1, 'Maria Alice Monteiro', 'felipeduarte@ig.com.br', '1987-03-13', 'Masculino', 56.00, 167, 'Perder peso', true);
-INSERT INTO public.usuarios VALUES (2, 'Ana Clara Silveira', 'henrique16@da.org', '1994-01-06', 'Masculino', 60.58, 156, 'Ganhar massa', true);
-INSERT INTO public.usuarios VALUES (3, 'Maria Julia Moraes', 'vpires@yahoo.com.br', '1981-05-14', 'Masculino', 78.62, 152, 'Perder peso', true);
-INSERT INTO public.usuarios VALUES (4, 'Fernando da Rosa', 'lsales@melo.com', '1970-04-15', 'Masculino', 63.75, 182, 'Ganhar massa', true);
-INSERT INTO public.usuarios VALUES (5, 'Bruna da Cunha', 'emanuelly38@ig.com.br', '1994-03-12', 'Masculino', 77.45, 184, 'Manter peso', true);
-INSERT INTO public.usuarios VALUES (6, 'Nathan da Rosa', 'luiz-henriquegoncalves@yahoo.com.br', '2003-05-27', 'Masculino', 72.97, 167, 'Perder peso', true);
-INSERT INTO public.usuarios VALUES (7, 'Agatha Cavalcanti', 'maria-fernandamoreira@ig.com.br', '1987-12-21', 'Masculino', 82.93, 171, 'Manter peso', true);
-INSERT INTO public.usuarios VALUES (8, 'Bruna Rezende', 'camposdiego@da.com', '2003-01-26', 'Masculino', 63.61, 171, 'Perder peso', true);
-INSERT INTO public.usuarios VALUES (9, 'Pedro Almeida', 'raquelfreitas@hotmail.com', '1976-05-02', 'Masculino', 70.20, 172, 'Manter peso', true);
-INSERT INTO public.usuarios VALUES (10, 'Sr. Vitor Novaes', 'castromaite@lopes.br', '2006-03-01', 'Feminino', 87.29, 179, 'Ganhar massa', true);
+INSERT INTO public.usuarios VALUES (1, 'Carlos Mendes', 'carlos.mendes@email.com', '1995-03-15', 'Masculino', 88.50, 178, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (2, 'Ana Julia Rios', 'ana.rios@email.com', '1988-07-22', 'Feminino', 62.00, 165, true, 'Dieta Saudavel');
+INSERT INTO public.usuarios VALUES (3, 'Bruno Teixeira', 'bruno.t@email.com', '2001-01-30', 'Masculino', 75.00, 182, true, 'Ganhar massa');
+INSERT INTO public.usuarios VALUES (4, 'Fernanda Costa', 'fernanda.costa@email.com', '1999-11-05', 'Feminino', 58.70, 160, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (5, 'Lucas de Almeida', 'lucas.almeida@email.com', '1992-09-18', 'Masculino', 95.20, 185, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (6, 'Beatriz Martins', 'beatriz.m@email.com', '2003-04-12', 'Feminino', 55.00, 170, true, 'Ganhar massa');
+INSERT INTO public.usuarios VALUES (7, 'Gabriel Pereira', 'gabriel.p@email.com', '1985-02-28', 'Masculino', 82.00, 176, true, 'Dieta Saudavel');
+INSERT INTO public.usuarios VALUES (8, 'Juliana Lima', 'juliana.lima@email.com', '1998-06-01', 'Feminino', 68.50, 168, true, 'Dieta Saudavel');
+INSERT INTO public.usuarios VALUES (9, 'Rafael Souza', 'rafael.souza@email.com', '2000-12-25', 'Masculino', 69.80, 179, true, 'Ganhar massa');
+INSERT INTO public.usuarios VALUES (10, 'Larissa Ferreira', 'larissa.f@email.com', '1993-10-08', 'Feminino', 74.00, 172, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (11, 'João Silva', 'joao.silva@email.com', '1990-05-15', 'Masculino', 85.50, 180, true, 'Ganhar massa');
+INSERT INTO public.usuarios VALUES (12, 'Maria Souza', 'maria.souza@email.com', '1992-08-22', 'Feminino', 62.10, 165, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (13, 'Pedro Santos', 'pedro.santos@email.com', '1988-11-30', 'Masculino', 78.00, 175, true, 'Dieta Saudavel');
+INSERT INTO public.usuarios VALUES (14, 'Ana Lima', 'ana.lima@email.com', '1995-03-10', 'Feminino', 58.75, 160, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (15, 'Carlos Oliveira', 'carlos.oliver@email.com', '1985-01-20', 'Masculino', 90.20, 185, true, 'Ganhar massa');
+INSERT INTO public.usuarios VALUES (16, 'Mariana Costa', 'mariana.costa@email.com', '1998-07-01', 'Feminino', 60.00, 170, true, 'Dieta Saudavel');
+INSERT INTO public.usuarios VALUES (17, 'Fernando Alves', 'fernando.alves@email.com', '1991-04-05', 'Masculino', 75.30, 178, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (18, 'Julia Rocha', 'julia.rocha@email.com', '1993-09-12', 'Feminino', 55.90, 162, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (19, 'Rafael Pereira', 'rafael.pereira@email.com', '1987-06-25', 'Masculino', 88.90, 182, true, 'Ganhar massa');
+INSERT INTO public.usuarios VALUES (20, 'Beatriz Gomes', 'beatriz.gomes@email.com', '1996-02-18', 'Feminino', 68.30, 172, true, 'Dieta Saudavel');
+INSERT INTO public.usuarios VALUES (21, 'Lucas Martins', 'lucas.martins@email.com', '1989-10-03', 'Masculino', 72.40, 170, true, 'Perder peso');
+INSERT INTO public.usuarios VALUES (22, 'Amanda Ribeiro', 'amanda.ribeiro@email.com', '1994-12-08', 'Feminino', 59.50, 168, true, 'Dieta Saudavel');
 
 
 --
@@ -1061,7 +1368,7 @@ SELECT pg_catalog.setval('public.grupos_alimentares_id_seq', 10, true);
 -- Name: plano_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.plano_id_seq', 1, false);
+SELECT pg_catalog.setval('public.plano_id_seq', 6, true);
 
 
 --
@@ -1082,7 +1389,7 @@ SELECT pg_catalog.setval('public.restricoes_id_seq', 1, false);
 -- Name: usuarios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_seq', 1, false);
+SELECT pg_catalog.setval('public.usuarios_id_seq', 22, true);
 
 
 --
@@ -1115,6 +1422,14 @@ ALTER TABLE ONLY public.grupos_alimentares
 
 ALTER TABLE ONLY public.grupos_alimentares
     ADD CONSTRAINT grupos_alimentares_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: metas_nutricionais metas_nutricionais_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metas_nutricionais
+    ADD CONSTRAINT metas_nutricionais_pkey PRIMARY KEY (usuario_id);
 
 
 --
@@ -1211,6 +1526,14 @@ ALTER TABLE ONLY public.avaliacoes
 
 ALTER TABLE ONLY public.alimentos
     ADD CONSTRAINT grupo_alimentar_id_fk FOREIGN KEY (grupo_alimentar_id) REFERENCES public.grupos_alimentares(id) NOT VALID;
+
+
+--
+-- Name: metas_nutricionais metas_nutricionais_usuario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.metas_nutricionais
+    ADD CONSTRAINT metas_nutricionais_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
 
 
 --
