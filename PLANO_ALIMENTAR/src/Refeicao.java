@@ -1,12 +1,13 @@
+import java.sql.Time;
 import java.util.Date;
 
 public class Refeicao {
     private int id;
     private String nome;
     private String tipo;
-    private Date horarioSugerido;
+    private Time horarioSugerido;
 
-    public Refeicao(int id, String nome, String tipo, Date horarioSugerido) {
+    public Refeicao(int id, String nome, String tipo, Time horarioSugerido) {
         this.id = id;
         this.nome = nome;
         this.tipo = tipo;
