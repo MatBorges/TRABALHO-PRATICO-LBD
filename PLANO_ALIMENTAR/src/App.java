@@ -126,9 +126,37 @@ public class App {
                 }
             }
 
+            String objetivo;
+            while (true) {
+                System.out.print("Objetivo (1 - Perder Peso, 2 - Ganho de Massa, 3 - Dieta Saudavel): ");
+                
+                String opcaoStr = scan.nextLine(); 
+                try {
+                    int opcao = Integer.parseInt(opcaoStr);
+
+                    switch (opcao) {
+                        case 1:
+                            objetivo = "Perder Peso";
+                            break;
+                        case 2:
+                            objetivo = "Ganho de Massa";
+                            break;
+                        case 3:
+                            objetivo = "Dieta Saudavel";
+                            break;
+                        default:
+                            System.out.println("Opção inválida.");
+                            continue;
+                    }
+                    break;
+                } catch (NumberFormatException e) {
+                    System.out.println("Entrada inválida. Por favor, digite 1 ou 2.");
+                }
+            }
+
             boolean ativo = true;
 
-            Usuario p = new Usuario(nome, email, dataNascimento, sexo, peso, altura, ativo);
+            Usuario p = new Usuario(nome, email, dataNascimento, sexo, peso, altura, objetivo, ativo);
             int usuarioId = usuLog.adicionarUsuario(p);
 
             System.out.print("Deseja adicionar restrições? (s/n): ");
