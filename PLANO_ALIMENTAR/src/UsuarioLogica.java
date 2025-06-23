@@ -10,7 +10,7 @@ public class UsuarioLogica {
     }
 
     public int adicionarUsuario(Usuario u) throws SQLException {
-        String sql = "INSERT INTO usuarios (nome, email, data_nascimento, sexo, peso_kg, altura_cm, ativo) VALUES (?, ?, ?, ?::tipo_sexo, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO usuarios (nome, email, data_nascimento, sexo, peso_kg, altura_cm, objetivo, ativo) VALUES (?, ?, ?, ?::tipo_sexo, ?, ?, ?::tipo_objetivo, ?) RETURNING id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getEmail());
@@ -18,7 +18,8 @@ public class UsuarioLogica {
             stmt.setString(4, u.getSexo());
             stmt.setDouble(5, u.getPesoKg());
             stmt.setInt(6, u.getAlturaCm());
-            stmt.setBoolean(7, u.isAtivo());
+            stmt.setString(7, u.getObjetivo());
+            stmt.setBoolean(8, u.isAtivo());
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -44,6 +45,7 @@ public class UsuarioLogica {
                         rs.getString("sexo"),
                         rs.getDouble("peso_kg"),
                         rs.getInt("altura_cm"),
+                        rs.getString("objetivo"),
                         rs.getBoolean("ativo")
                 );
                 usuarios.add(p);
