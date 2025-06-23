@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class App {
-    static final String URL = "jdbc:postgresql://localhost:5433/TESTE_TRABALHO_LBD";
+    static final String URL = "jdbc:postgresql://localhost:5433/TRABALHO_LBD";
     static final String USER = "postgres";
     static final String SENHA = "minhasenha";
 
@@ -18,6 +18,7 @@ public class App {
             RestricaoLogica resLog = new RestricaoLogica(conn);
             GrupoAlimentarLogica gaLog = new GrupoAlimentarLogica(conn);
             AlimentoLogica aliLog = new AlimentoLogica(conn);
+            RefeicaoLogica refLog = new RefeicaoLogica(conn);
 
             while (true) {
                 System.out.println("\nMenu PLANO ALIMENTAR:");
@@ -29,6 +30,7 @@ public class App {
                 System.out.println("6 - Consultar Grupo Alimentar");
                 System.out.println("7 - Cadastrar Alimento");
                 System.out.println("8 - Consultar Alimentos");
+                System.out.println("9 - Consultar Refeições");
                 System.out.println("0 - Sair");
                 System.out.print("Escolha uma opção: ");
                 int opcao = scan.nextInt();
@@ -43,6 +45,7 @@ public class App {
                     case 6 -> consultarGruposAlimentares(gaLog);
                     case 7 -> cadastrarAlimento(scan, aliLog, gaLog);
                     case 8 -> consultarAlimentos(aliLog);
+                    case 9 -> consultarRefeicoes(refLog);
                     case 0 -> {
                         System.out.println("Encerrando programa.");
                         return;
@@ -330,6 +333,18 @@ public class App {
             }
         } catch (SQLException e) {
             System.out.println("Erro ao consultar Alimentos: " + e.getMessage());
+        }
+    }
+
+
+    private static void consultarRefeicoes(RefeicaoLogica refLog) {
+        try {
+            List<Refeicao> lista = refLog.listarRefeicoes();
+            for (Refeicao r : lista) {
+                System.out.println(r);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao consultar Refeicoes: " + e.getMessage());
         }
     }
 }

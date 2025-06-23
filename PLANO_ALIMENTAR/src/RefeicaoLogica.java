@@ -19,8 +19,9 @@ public class RefeicaoLogica {
                         rs.getInt("id"),
                         rs.getString("nome"),
                         rs.getString("tipo"),
-                        rs.getDate("horario_sugerido")
+                        rs.getTime("horario_sugerido")
                 );
+                System.out.println(r);
                 refeicoes.add(r);
             }
         }
